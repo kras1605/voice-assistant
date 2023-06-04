@@ -38,8 +38,8 @@ def speak(speak_text, engine, glow, text):
     engine.say(speak_text)
     engine.runAndWait()
 
+    text.put_nowait('')
     glow.clear()
-    text.put_nowait('Listening...')
 
 
 def gui_program(glow, text):
@@ -47,11 +47,12 @@ def gui_program(glow, text):
 
     pygame.init()
     pygame.display.init()
-    screen = pygame.display.set_mode((screen_width, screen_height), pygame.WINDOWMAXIMIZED)
-
-    favicon = pygame.image.load(screen_icon)
+    
     pygame.display.set_caption(screen_title)
-    pygame.display.set_icon(favicon)
+    pygame.display.set_icon(pygame.image.load(screen_icon))
+    
+    screen = pygame.display.set_mode((screen_width, screen_height), pygame.WINDOWMAXIMIZED)
+    screen.fill((5, 2, 23))
 
     handler = features.PygameImageHandler()
     font = pygame.font.Font('freesansbold.ttf', 24)
@@ -99,7 +100,7 @@ def gui_program(glow, text):
             "Memory Usage : " + str(psutil.virtual_memory().percent) + "%", True, (217, 224, 255))
         screen.blit(right_display, right_display.get_rect(
             center=(screen_width - (screen_width // 4), screen_height // 11)))
-
+        
         # Bottom Text
         if (current_text != ""):
             text_display = font.render(
@@ -122,114 +123,127 @@ def recognizer_program(glow, text):
 
     recognizer = speech_recognition.Recognizer()
     recognizer.pause_threshold = 0.8
-    voices = speech_recognition.Microphone()
 
+    microphone = speech_recognition.Microphone()
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
     engine.setProperty('voice', voices[0].id)
     engine.setProperty('rate', 200)
 
-    speak(f"{features.get_wish()} sir, I am your virtual ai assistant. ready for command", engine,  glow, text)
-
+    first_speak = False
     while screen_running:
-        with speech_recognition.Microphone() as source:
+        
+        with microphone as source:
+            if(first_speak == False):
+                speak(f"{features.get_wish()} sir, I am your virtual ai assistant. ready for command", engine,  glow, text)
+                first_speak=True
             features.get_print_light_purple("Listening...")
-            audio = recognizer.listen(source, phrase_time_limit=5)
+            text.put_nowait('Listening...')
+            audio = recognizer.listen(source)
+
+        # Enter Command From Terminal 
+        # listen_text = input("Enter Command : ").lower()
 
         try:
             listen_text = recognizer.recognize_google(audio).lower()
+            
+            if(listen_text):
+                features.get_print_purple("You : " + listen_text)
+                reply_text = "sorry sir i did not find any perfect response."
 
-            # Enter Command From Terminal 
-            # listen_text = input("Enter Command : ").lower()
+                if "hello" in listen_text:
+                    reply_text = "hello sir, how may i help you"
 
-            features.get_print_purple("You : " + listen_text)
-            reply_text = "sorry sir i did not find any perfect response."
+                elif "hi" in listen_text:
+                    reply_text = "Hi Sir, how are you ?"
 
-            if "hello" == listen_text:
-                reply_text = "hello sir, how may i help you"
+                elif "help" in listen_text:
+                    reply_text = "Sir please notics the command panel at the right side of this window"
 
-            if "how are you" == listen_text:
-                reply_text = "i am fine sir, what about you"
+                elif "your name" in listen_text:
+                    reply_text = "You can call my anything sir, but i will like more if you call me only virtual assistant"
 
-            if "who are you" == listen_text:
-                reply_text = "i am fine sir, what about you"
+                elif "how are you" in listen_text:
+                    reply_text = "i am fine sir, what about you"
 
-            if "fine" == listen_text:
-                reply_text = "glad to hear that sir"
+                elif "who are you" in listen_text  or "what about you" in listen_text:
+                    reply_text = "i am a virtual ai assistant developed with python programming language. I am made for making things easy for humans."
 
-            elif "date" in listen_text:
-                reply_text = features.get_date()
+                elif "fine" == listen_text:
+                    reply_text = "glad to hear that sir"
 
-            elif "time" in listen_text:
-                reply_text = features.get_time()
+                elif "date" in listen_text:
+                    reply_text = features.get_date()
 
-            elif "joke" in listen_text:
-                reply_text = features.get_joke()
+                elif "time" in listen_text:
+                    reply_text = features.get_time()
 
-            elif "screenshot" in listen_text or "capture the screen" in listen_text:
-                reply_text = features.take_screenshot()
+                elif "joke" in listen_text:
+                    reply_text = features.get_joke()
 
-            elif "where i am" in listen_text or "current location" in listen_text or "where am i" in listen_text:
-                city, state, country = features.get_my_location()
-                reply_text = f"You are currently in {city} city which is in {state} state and country {country}"
+                elif "screenshot" in listen_text or "capture the screen" in listen_text:
+                    reply_text = features.take_screenshot()
 
-            elif "goodbye" in listen_text or "offline" in listen_text or "bye" in listen_text or "stop" in listen_text:
-                screen_running = False
+                elif "where i am" in listen_text or "current location" in listen_text or "where am i" in listen_text:
+                    city, state, country = features.get_my_location()
+                    reply_text = f"You are currently in {city} city which is in {state} state and country {country}"
 
-            elif "ip address" in listen_text or "ip" in listen_text:
-                reply_text = features.get_my_ip()
+                elif "goodbye" in listen_text or "offline" in listen_text or "bye" in listen_text or "stop" in listen_text:
+                    screen_running = False
 
-            elif "system" in listen_text or "system_info" in listen_text:
-                reply_text = features.get_system_stats()
+                elif "ip address" in listen_text or "ip" in listen_text:
+                    reply_text = features.get_my_ip()
 
-            elif 'search google for' in listen_text:
-                reply_text = features.get_google_search(listen_text)
+                elif "system" in listen_text or "system_info" in listen_text:
+                    reply_text = features.get_system_stats()
 
-            elif 'tell me about' in listen_text:
-                topic = listen_text.split('tell me about')[1]
-                if topic:
-                    reply_text = features.get_wiki_response(topic)
-                else:
-                    reply_text = "sorry sir. I couldn't load your query from my database."
+                elif 'search google for' in listen_text:
+                    reply_text = features.get_google_search(listen_text)
 
-            elif 'launch' in listen_text:
-                app_dictionary = {
-                    'chrome': 'C:/Program Files/Google/Chrome/Application/chrome'
-                }
-                app = listen_text.split(' ', 1)[1]
-                path = app_dictionary.get(app)
-                if path is None:
-                    reply_text = 'application path not found'
-                else:
-                    features.launch_any_app(path_of_app=path)
-                    reply_text = 'launching ' + app + 'for you sir!'
+                elif 'tell me about' in listen_text:
+                    topic = listen_text.split('tell me about')[1]
+                    if topic:
+                        reply_text = features.get_wiki_response(topic)
+                    else:
+                        reply_text = "sorry sir. I couldn't load your query from my database."
 
-            elif 'weather' in listen_text:
-                reply_text = features.get_weather(city=listen_text.split(' ')[-1])
+                elif 'launch' in listen_text:
+                    app_dictionary = {
+                        'chrome': 'C:/Program Files/Google/Chrome/Application/chrome'
+                    }
+                    app = listen_text.split(' ', 1)[1]
+                    path = app_dictionary.get(app)
+                    if path is None:
+                        reply_text = 'application path not found'
+                    else:
+                        features.launch_any_app(path_of_app=path)
+                        reply_text = 'launching ' + app + 'for you sir!'
 
-            elif "buzzing" in listen_text or "news" in listen_text or "headlines" in listen_text:
-                news_res = features.get_news()
-                res = 'Source: The Times Of India. Todays Headlines are. '
-                for index, articles in enumerate(news_res):
-                    res = res + articles['title']
-                    if index == len(news_res)-2:
-                        break
-                reply_text = res
+                elif 'weather' in listen_text:
+                    reply_text = features.get_weather(city=listen_text.split(' ')[-1])
 
-            elif "where is" in listen_text:
-                place = listen_text.split('where is ', 1)[1]
-                current_loc, target_loc, distance = features.get_location(place)
-                city = target_loc.get('city', '')
-                state = target_loc.get('state', '')
-                country = target_loc.get('country', '')
-                if city:
-                    reply_text = f"{place} is in {state} state and country {country}. It is {distance} km away from your current location"
-                else:
-                    reply_text = f"{state} is a state in {country}. It is {distance} km away from your current location"
+                elif "buzzing" in listen_text or "news" in listen_text or "headlines" in listen_text:
+                    news_res = features.get_news()
+                    res = 'Source: The Times Of India. Todays Headlines are. '
+                    for index, articles in enumerate(news_res):
+                        res = res + articles['title']
+                        if index == len(news_res)-2:
+                            break
+                    reply_text = res
 
-            if (reply_text):
-                speak(reply_text, engine, glow, text)
+                elif "where is" in listen_text:
+                    place = listen_text.split('where is ', 1)[1]
+                    current_loc, target_loc, distance = features.get_location(place)
+                    city = target_loc.get('city', '')
+                    state = target_loc.get('state', '')
+                    country = target_loc.get('country', '')
+                    if city:
+                        reply_text = f"{place} is in {state} state and country {country}. It is {distance} km away from your current location"
+                    else:
+                        reply_text = f"{state} is a state in {country}. It is {distance} km away from your current location"
 
+                if (reply_text):
+                    speak(reply_text, engine, glow, text)
         except:
             if(not screen_running):
                 features.get_print_red("error : either could not recognize your speech or something went wrong")
