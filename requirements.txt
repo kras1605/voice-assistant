@@ -1,0 +1,13 @@
+geocoder==1.38.1
+geopy==2.3.0
+nltk==3.8.1
+psutil==5.9.5
+PyAutoGUI==0.9.53
+pygame==2.3.0
+pyjokes==0.6.0
+pyttsx3==2.71
+Requests==2.31.0
+selenium==4.9.1
+SpeechRecognition==3.10.0
+wikipedia==1.4.0
+wolframalpha==5.0.0
